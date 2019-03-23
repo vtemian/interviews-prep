@@ -22,12 +22,16 @@ class Node:
     def __repr__(self) -> str:
         """ 1->2->3 ... """
 
+        store = {}
         result = str(self.val)
 
         head = self.next
 
-        while head:
+        while head and id(head) not in store:
             result += '->{}'.format(head.val)
+
+            store[id(head)] = head
+
             head = head.next
 
         return result
