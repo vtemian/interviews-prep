@@ -5,6 +5,5 @@ TESTS_PROBLEMS := $(addprefix test-, $(PROBLEMS))
 tests: $(TESTS_PROBLEMS)
 	@echo $^
 
-.PHONY: tests-cracking
 test-cracking-the-code-interview/%:
 	python3 cracking-the-code-interview/$*
