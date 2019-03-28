@@ -1,5 +1,7 @@
 from typing import List
 
+from fixtures import COMPLETE_TREES, INCOMPLETE_TREES
+
 
 # describe a simple tree
 RAW_NODES = (
@@ -32,6 +34,21 @@ class Node:
 class Tree:
     def __init__(self, root: Node):
         self.root = root
+
+    @property
+    def depth(self) -> int:
+        def _depth(node: Node) -> int:
+            if node is None:
+                return 0
+
+            max_depth = 1
+            for kid in node.nodes:
+                kid_depth = 1 + _depth(kid)
+                max_depth = max(max_depth, kid_depth)
+
+            return max_depth
+
+        return _depth(self.root)
 
     def find(self, val: int) -> bool:
         def _find(node: Node):
@@ -68,6 +85,9 @@ class Tree:
 
         if isinstance(nodes, int):
             return Node(nodes)
+
+        if len(nodes) < 2:
+            return Node(nodes[0])
 
         root, kids = nodes
         kids = [
@@ -137,6 +157,65 @@ class BinaryTree(Tree):
 
         return _insert(self.root)
 
+    @property
+    def is_complete(self) -> bool:
+        """
+        All levels are filled, except maybe the last level.
+        Check last level if it's filled from left to right.
+
+                  10
+               /      \
+              5       20
+             / \        \
+            3   7       30
+                 False
+
+
+                  10
+               /      \
+              5       20
+             / \      /
+            3   7    15
+
+                 True
+
+
+                  10
+               /      \
+              5       20
+             /
+            3
+                 True
+        """
+
+        depth = self.depth - 1
+
+        def _get_last_layer(node: Node, current_layer: int = 0) -> list:
+            if node is None:
+                return [None]
+
+            if current_layer == depth:
+                return [node.val]
+
+            kids = []
+            for kid in node.nodes:
+                kids += _get_last_layer(kid, current_layer + 1)
+
+            return kids
+
+        last_layer = _get_last_layer(self.root)
+
+        idx = 1
+        while idx < len(last_layer):
+            prev, current = last_layer[idx - 1], last_layer[idx]
+
+            if prev is None and current is not None:
+                return False
+
+            idx += 1
+
+        return True
+
 
 class BinarySearchTree(BinaryTree):
     @property
@@ -147,6 +226,9 @@ class BinarySearchTree(BinaryTree):
 
             if not node.nodes:
                 return True
+
+            if len(node.nodes) < 2:
+                return False
 
             left, right = node.nodes
             if left is None:
@@ -198,7 +280,6 @@ class BinarySearchTree(BinaryTree):
 
             return _insert(left)
 
-
         return _insert(self.root)
 
 
@@ -206,7 +287,7 @@ class BinarySearchTree(BinaryTree):
 for use_case, *expected_result in [
         (
             RAW_NODES,
-            True, True
+            True, True, 3
         ),
         (
             (1,
@@ -214,18 +295,21 @@ for use_case, *expected_result in [
                [3, 4, 5, 6]),
               (10,
                [11])]),
-            False, False
+            False, False, 3
         ),
 ]:
     tree = BinarySearchTree(BinarySearchTree.build(use_case))
 
-    is_binary_tree, is_binary_search_tree = expected_result
+    is_binary_tree, is_binary_search_tree, depth = expected_result
 
     assert tree.is_binary_tree == is_binary_tree, \
            "{} != {}".format(tree.is_binary_tree, is_binary_tree)
 
     assert tree.is_binary_search_tree == is_binary_search_tree, \
            "{} != {}".format(tree, is_binary_search_tree)
+
+    assert tree.depth == depth, \
+           "{} != {}".format(tree.depth, depth)
 
 
 # test find method
@@ -329,3 +413,14 @@ for use_case, *expected_result in [
 
     assert result == insert_result, "{} != {}".format(result, insert_result)
     assert str(bst) == tree_repr, "{} != {}".format(str(bst), tree_repr)
+
+
+# test is a tree is completed
+for raw_nodes in COMPLETE_TREES:
+    bt = BinaryTree(BinaryTree.build(raw_nodes))
+    assert bt.is_complete, "Tree {} is not complete".format(bt)
+
+# test is a tree is incompleted
+for raw_nodes in INCOMPLETE_TREES:
+    bt = BinaryTree(BinaryTree.build(raw_nodes))
+    assert not bt.is_complete, "Tree {} is complete".format(bt)
