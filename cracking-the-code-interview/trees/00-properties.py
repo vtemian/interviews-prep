@@ -2,7 +2,7 @@ from fixtures import (SIMPLE_TREE,
                       COMPLETE_TREES, INCOMPLETE_TREES,
                       FULL_TREES, NOT_FULL_TREES,
                       PERFECT_TREES, IMPERFECT_TREES)
-from tree import Tree, BinaryTree, BinarySearchTree
+from tree import Node, Tree, BinaryTree, BinarySearchTree
 
 # test basic structures
 for use_case, *expected_result in [
@@ -165,3 +165,38 @@ for raw_nodes in PERFECT_TREES:
 for raw_nodes in IMPERFECT_TREES:
     bt = BinaryTree(BinaryTree.build(raw_nodes))
     assert not bt.is_perfect, "Tree {} is perfect".format(bt)
+
+
+# test in order traversal
+for nodes, expected_result in [
+    (
+        (
+            8,
+            [(4,
+              [2, 6]),
+             (10,
+              [None, 20])]
+        ),
+        "2->4->6->8->10->20"
+    ),
+    (
+        (1, ), "1"
+    ),
+
+    (
+        (1, [2]), "2->1"
+    ),
+
+    (
+        (1, [None, 2]), "1->2"
+    ),
+]:
+    result = []
+    def visit(node: Node) -> None:
+        result.append(node.val)
+
+    bt = BinaryTree(BinaryTree.build(nodes))
+    bt.in_order(visit)
+
+    result = "->".join([str(val) for val in result])
+    assert result == expected_result, "{} != {}".format(result, expected_result)

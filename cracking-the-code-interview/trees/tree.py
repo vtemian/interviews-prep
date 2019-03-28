@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Callable
 
 
 class Node:
@@ -124,6 +124,23 @@ class Tree:
 
 
 class BinaryTree(Tree):
+    def in_order(self, visit: Callable) -> None:
+        def _in_order(node: Node) -> None:
+            nonlocal visit
+
+            if node is None:
+                return
+
+            if len(node.nodes) > 0:
+                _in_order(node.nodes[0])
+
+            visit(node)
+
+            if len(node.nodes) > 1:
+                _in_order(node.nodes[1])
+
+        return _in_order(self.root)
+
     @property
     def is_binary_tree(self) -> bool:
         def check(node: Node) -> bool:
@@ -229,7 +246,8 @@ class BinaryTree(Tree):
     @property
     def is_perfect(self) -> bool:
         last_layer = self.last_layer
-        return len(last_layer) == 2 ** (self.depth - 1) and all([node is not None for node in last_layer])
+        return (len(last_layer) == 2 ** (self.depth - 1)
+                and all([node is not None for node in last_layer]))
 
 
 class BinarySearchTree(BinaryTree):
