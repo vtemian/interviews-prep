@@ -158,6 +158,23 @@ class BinaryTree(Tree):
 
         return _pre_order(self.root)
 
+    def post_order(self, visit: Callable) -> None:
+        def _post_order(node: Node) -> None:
+            nonlocal visit
+
+            if node is None:
+                return
+
+            if len(node.nodes) > 0:
+                _post_order(node.nodes[0])
+
+            if len(node.nodes) > 1:
+                _post_order(node.nodes[1])
+
+            visit(node)
+
+        return _post_order(self.root)
+
     @property
     def is_binary_tree(self) -> bool:
         def check(node: Node) -> bool:

@@ -200,6 +200,7 @@ for nodes, expected_result in [
     result = "->".join([str(val) for val in result])
     assert result == expected_result, "{} != {}".format(result, expected_result)
 
+
 # test pre order traversal
 for nodes, expected_result in [
     (
@@ -230,6 +231,41 @@ for nodes, expected_result in [
 
     bt = BinaryTree(BinaryTree.build(nodes))
     bt.pre_order(visit)
+
+    result = "->".join([str(val) for val in result])
+    assert result == expected_result, "{} != {}".format(result, expected_result)
+
+
+# test post order traversal
+for nodes, expected_result in [
+    (
+        (
+            8,
+            [(4,
+              [2, 6]),
+             (10,
+              [None, 20])]
+        ),
+        "2->6->4->20->10->8"
+    ),
+    (
+        (1, ), "1"
+    ),
+
+    (
+        (1, [2]), "2->1"
+    ),
+
+    (
+        (1, [None, 2]), "2->1"
+    ),
+]:
+    result = []
+    def visit(node: Node) -> None:
+        result.append(node.val)
+
+    bt = BinaryTree(BinaryTree.build(nodes))
+    bt.post_order(visit)
 
     result = "->".join([str(val) for val in result])
     assert result == expected_result, "{} != {}".format(result, expected_result)
