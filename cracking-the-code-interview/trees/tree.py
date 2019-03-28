@@ -1,6 +1,6 @@
 from typing import List
 
-from fixtures import COMPLETE_TREES, INCOMPLETE_TREES
+from fixtures import COMPLETE_TREES, INCOMPLETE_TREES, FULL_TREES, NOT_FULL_TREES
 
 
 # describe a simple tree
@@ -216,6 +216,27 @@ class BinaryTree(Tree):
 
         return True
 
+    @property
+    def is_full(self) -> bool:
+        """
+        All nodes need to have two or zero children.
+        """
+
+        def _is_full(node: Node) -> bool:
+            if node is None:
+                return False
+
+            if len(node.nodes) == 1:
+                return False
+
+            for kid in node.nodes:
+                if not _is_full(kid):
+                    return False
+
+            return True
+
+        return _is_full(self.root)
+
 
 class BinarySearchTree(BinaryTree):
     @property
@@ -424,3 +445,13 @@ for raw_nodes in COMPLETE_TREES:
 for raw_nodes in INCOMPLETE_TREES:
     bt = BinaryTree(BinaryTree.build(raw_nodes))
     assert not bt.is_complete, "Tree {} is complete".format(bt)
+
+# test is a tree is full
+for raw_nodes in FULL_TREES:
+    bt = BinaryTree(BinaryTree.build(raw_nodes))
+    assert bt.is_full, "Tree {} is not full".format(bt)
+
+# test is a tree is not full
+for raw_nodes in NOT_FULL_TREES:
+    bt = BinaryTree(BinaryTree.build(raw_nodes))
+    assert not bt.is_full, "Tree {} is full".format(bt)
