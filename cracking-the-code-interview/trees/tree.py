@@ -1,17 +1,5 @@
 from typing import List
 
-from fixtures import COMPLETE_TREES, INCOMPLETE_TREES, FULL_TREES, NOT_FULL_TREES
-
-
-# describe a simple tree
-RAW_NODES = (
-    8,
-    [(4,
-      [2, 6]),
-     (10,
-      [None, 20])]
-)
-
 
 class Node:
     def __init__(self, val: str, nodes: List['Node'] = None):
@@ -49,6 +37,22 @@ class Tree:
             return max_depth
 
         return _depth(self.root)
+
+    @property
+    def last_layer(self) -> List[Node]:
+        depth = self.depth - 1
+
+        def _get_last_layer(node: Node, current_layer: int = 0) -> List[Node]:
+            if node is None or current_layer == depth:
+                return [node]
+
+            kids = []
+            for kid in node.nodes:
+                kids += _get_last_layer(kid, current_layer + 1)
+
+            return kids
+
+        return _get_last_layer(self.root)
 
     def find(self, val: int) -> bool:
         def _find(node: Node):
@@ -188,22 +192,7 @@ class BinaryTree(Tree):
                  True
         """
 
-        depth = self.depth - 1
-
-        def _get_last_layer(node: Node, current_layer: int = 0) -> list:
-            if node is None:
-                return [None]
-
-            if current_layer == depth:
-                return [node.val]
-
-            kids = []
-            for kid in node.nodes:
-                kids += _get_last_layer(kid, current_layer + 1)
-
-            return kids
-
-        last_layer = _get_last_layer(self.root)
+        last_layer = self.last_layer
 
         idx = 1
         while idx < len(last_layer):
@@ -236,6 +225,11 @@ class BinaryTree(Tree):
             return True
 
         return _is_full(self.root)
+
+    @property
+    def is_perfect(self) -> bool:
+        last_layer = self.last_layer
+        return len(last_layer) == 2 ** (self.depth - 1) and all([node is not None for node in last_layer])
 
 
 class BinarySearchTree(BinaryTree):
@@ -302,156 +296,3 @@ class BinarySearchTree(BinaryTree):
             return _insert(left)
 
         return _insert(self.root)
-
-
-# test basic structures
-for use_case, *expected_result in [
-        (
-            RAW_NODES,
-            True, True, 3
-        ),
-        (
-            (1,
-             [(2,
-               [3, 4, 5, 6]),
-              (10,
-               [11])]),
-            False, False, 3
-        ),
-]:
-    tree = BinarySearchTree(BinarySearchTree.build(use_case))
-
-    is_binary_tree, is_binary_search_tree, depth = expected_result
-
-    assert tree.is_binary_tree == is_binary_tree, \
-           "{} != {}".format(tree.is_binary_tree, is_binary_tree)
-
-    assert tree.is_binary_search_tree == is_binary_search_tree, \
-           "{} != {}".format(tree, is_binary_search_tree)
-
-    assert tree.depth == depth, \
-           "{} != {}".format(tree.depth, depth)
-
-
-# test find method
-bst = BinarySearchTree(BinarySearchTree.build(RAW_NODES))
-for use_case, expected_result in [
-        (8, True),
-        (20, True),
-        (-1, False),
-]:
-    result = bst.find(use_case)
-    assert result == expected_result, "{} != {}".format(result, expected_result)
-
-
-# test insert method
-bt = BinaryTree(BinaryTree.build(RAW_NODES))
-for use_case, *expected_result in [
-        (1, True, True, """
--- 8
-|  |-- 4
-|  |  |-- 2
-|  |  |  |-- 1
-|  |  |-- 6
-|  |-- 10
-|  |  |-- 20"""),
-
-        (0, True, True, """
--- 8
-|  |-- 4
-|  |  |-- 2
-|  |  |  |-- 1
-|  |  |  |-- 0
-|  |  |-- 6
-|  |-- 10
-|  |  |-- 20"""),
-
-        (3, True, True, """
--- 8
-|  |-- 4
-|  |  |-- 2
-|  |  |  |-- 1
-|  |  |  |  |-- 3
-|  |  |  |-- 0
-|  |  |-- 6
-|  |-- 10
-|  |  |-- 20"""),
-        (8, False, True, """
--- 8
-|  |-- 4
-|  |  |-- 2
-|  |  |  |-- 1
-|  |  |  |  |-- 3
-|  |  |  |-- 0
-|  |  |-- 6
-|  |-- 10
-|  |  |-- 20"""),
-]:
-    insert_result, find_result, tree_repr = expected_result
-
-    result = bt.insert(use_case)
-    assert result == insert_result, "{} != {}".format(result, insert_result)
-
-    result = bt.find(use_case)
-    assert result == find_result, "{} != {}".format(result, find_result)
-
-    assert str(bt) == tree_repr, "{} != {}".format(str(bt), tree_repr)
-
-
-# test insert method
-bst = BinarySearchTree(BinarySearchTree.build(RAW_NODES))
-for use_case, *expected_result in [
-        (1, True, """
--- 8
-|  |-- 4
-|  |  |-- 2
-|  |  |  |-- 1
-|  |  |-- 6
-|  |-- 10
-|  |  |-- 20"""),
-        (15, True, """
--- 8
-|  |-- 4
-|  |  |-- 2
-|  |  |  |-- 1
-|  |  |-- 6
-|  |-- 10
-|  |  |-- 20
-|  |  |  |-- 15"""),
-        (15, False, """
--- 8
-|  |-- 4
-|  |  |-- 2
-|  |  |  |-- 1
-|  |  |-- 6
-|  |-- 10
-|  |  |-- 20
-|  |  |  |-- 15"""),
-]:
-    insert_result, tree_repr = expected_result
-
-    result = bst.insert(use_case)
-
-    assert result == insert_result, "{} != {}".format(result, insert_result)
-    assert str(bst) == tree_repr, "{} != {}".format(str(bst), tree_repr)
-
-
-# test is a tree is completed
-for raw_nodes in COMPLETE_TREES:
-    bt = BinaryTree(BinaryTree.build(raw_nodes))
-    assert bt.is_complete, "Tree {} is not complete".format(bt)
-
-# test is a tree is incompleted
-for raw_nodes in INCOMPLETE_TREES:
-    bt = BinaryTree(BinaryTree.build(raw_nodes))
-    assert not bt.is_complete, "Tree {} is complete".format(bt)
-
-# test is a tree is full
-for raw_nodes in FULL_TREES:
-    bt = BinaryTree(BinaryTree.build(raw_nodes))
-    assert bt.is_full, "Tree {} is not full".format(bt)
-
-# test is a tree is not full
-for raw_nodes in NOT_FULL_TREES:
-    bt = BinaryTree(BinaryTree.build(raw_nodes))
-    assert not bt.is_full, "Tree {} is full".format(bt)
