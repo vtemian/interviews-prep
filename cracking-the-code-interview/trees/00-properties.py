@@ -3,7 +3,8 @@ import sys
 from fixtures import (SIMPLE_TREE,
                       COMPLETE_TREES, INCOMPLETE_TREES,
                       FULL_TREES, NOT_FULL_TREES,
-                      PERFECT_TREES, IMPERFECT_TREES)
+                      PERFECT_TREES, IMPERFECT_TREES,
+                      BALANCED_TREES, IMBALANCED_TREES)
 from tree import Node, Tree, BinaryTree, BinarySearchTree
 
 
@@ -273,6 +274,18 @@ def test_post_order_traversal():
 
         result = "->".join([str(val) for val in result])
         assert result == expected_result, "{} != {}".format(result, expected_result)
+
+
+def test_is_balanced():
+    for nodes in BALANCED_TREES:
+        bt = BinaryTree(BinaryTree.build(nodes))
+        assert bt.is_balanced, "Tree {} is not balanced".format(bt)
+
+
+def test_is_not_balanced():
+    for nodes in IMBALANCED_TREES:
+        bt = BinaryTree(BinaryTree.build(nodes))
+        assert not bt.is_balanced, "Tree {} is balanced".format(bt)
 
 
 def run_test(local, test: str):

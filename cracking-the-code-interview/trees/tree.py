@@ -23,20 +23,21 @@ class Tree:
     def __init__(self, root: Node):
         self.root = root
 
+    @staticmethod
+    def node_depth(node: Node) -> int:
+        if node is None:
+            return 0
+
+        max_depth = 1
+        for kid in node.nodes:
+            kid_depth = 1 + Tree.node_depth(kid)
+            max_depth = max(max_depth, kid_depth)
+
+        return max_depth
+
     @property
     def depth(self) -> int:
-        def _depth(node: Node) -> int:
-            if node is None:
-                return 0
-
-            max_depth = 1
-            for kid in node.nodes:
-                kid_depth = 1 + _depth(kid)
-                max_depth = max(max_depth, kid_depth)
-
-            return max_depth
-
-        return _depth(self.root)
+        return Tree.node_depth(self.root)
 
     @property
     def last_layer(self) -> List[Node]:
@@ -174,6 +175,29 @@ class BinaryTree(Tree):
             visit(node)
 
         return _post_order(self.root)
+
+    @property
+    def is_balanced(self) -> bool:
+        """ Each subtrees have a difference of maxmimum one in height. """
+
+        def _is_balanced(node: Node) -> bool:
+            if not node:
+                return False
+
+            if not node.nodes:
+                return True
+
+            if len(node.nodes) < 2:
+                return Tree.node_depth(node.nodes[0]) == 1
+
+            depth = abs(Tree.node_depth(node.nodes[0]) -
+                        Tree.node_depth(node.nodes[1]))
+            if depth > 1:
+                return False
+
+            return _is_balanced(node.nodes[0]) and _is_balanced(node.nodes[1])
+
+        return _is_balanced(self.root)
 
     @property
     def is_binary_tree(self) -> bool:
