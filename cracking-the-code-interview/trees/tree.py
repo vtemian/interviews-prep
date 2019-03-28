@@ -1,5 +1,6 @@
 from typing import List
 
+
 # describe a simple tree
 RAW_NODES = (
     8,
@@ -161,6 +162,45 @@ class BinarySearchTree(BinaryTree):
 
         return self.is_binary_tree and check(self.root)
 
+    def insert(self, val: int) -> bool:
+        if self.find(val):
+            return False
+
+        def _insert(node: Node):
+            if node is None:
+                return False
+
+            # [None, None]
+            if not node.nodes:
+                left, right = None, None
+
+                if val > node.val:
+                    right = Node(val)
+                else:
+                    left = Node(val)
+
+                node.nodes = [left, right]
+                return True
+
+            # [None, 2]
+            # [1, None]
+            left, right = node.nodes
+            if left is None or right is None:
+                if left is None and val < node.val:
+                    node.nodes[0] = Node(val)
+                    return True
+                if right is None and val > node.val:
+                    node.nodes[1] = Node(val)
+                    return True
+
+            if val > node.val:
+                return _insert(right)
+
+            return _insert(left)
+
+
+        return _insert(self.root)
+
 
 # test basic structures
 for use_case, *expected_result in [
@@ -251,3 +291,41 @@ for use_case, *expected_result in [
     assert result == find_result, "{} != {}".format(result, find_result)
 
     assert str(bt) == tree_repr, "{} != {}".format(str(bt), tree_repr)
+
+
+# test insert method
+bst = BinarySearchTree(BinarySearchTree.build(RAW_NODES))
+for use_case, *expected_result in [
+        (1, True, """
+-- 8
+|  |-- 4
+|  |  |-- 2
+|  |  |  |-- 1
+|  |  |-- 6
+|  |-- 10
+|  |  |-- 20"""),
+        (15, True, """
+-- 8
+|  |-- 4
+|  |  |-- 2
+|  |  |  |-- 1
+|  |  |-- 6
+|  |-- 10
+|  |  |-- 20
+|  |  |  |-- 15"""),
+        (15, False, """
+-- 8
+|  |-- 4
+|  |  |-- 2
+|  |  |  |-- 1
+|  |  |-- 6
+|  |-- 10
+|  |  |-- 20
+|  |  |  |-- 15"""),
+]:
+    insert_result, tree_repr = expected_result
+
+    result = bst.insert(use_case)
+
+    assert result == insert_result, "{} != {}".format(result, insert_result)
+    assert str(bst) == tree_repr, "{} != {}".format(str(bst), tree_repr)
