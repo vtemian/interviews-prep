@@ -1,8 +1,8 @@
-from typing import List, Callable
+from typing import List, Callable, Union, Tuple
 
 
 class Node:
-    def __init__(self, val: str, nodes: List['Node'] = None):
+    def __init__(self, val: Union[str, int], nodes: List['Node'] = None):
         self.val = val
         self.nodes = nodes or []
 
@@ -372,3 +372,59 @@ class BinarySearchTree(BinaryTree):
             return _insert(left)
 
         return _insert(self.root)
+
+
+class Trie(Tree):
+    def __init__(self):
+        self.root = Node('*')
+
+    def _find_start(self, node: Node, ch: str) -> Tuple[Union[None, Node], str]:
+        if not ch:
+            return None, ch
+
+        if node.val != ch[0]:
+            return None, ch
+
+        for kid in node.nodes:
+            result, rest = self._find_start(kid, ch[1:])
+            if result:
+                return result, rest
+
+        return node, ch[1:]
+
+    def index(self, string: str):
+        rest = string
+        start = self.root
+
+        for node in self.root.nodes:
+            result = self._find_start(node, string)
+            if result[0]:
+                start, rest = result
+                break
+
+        for ch in rest:
+            start.nodes.append(Node(ch))
+            start = start.nodes[-1]
+
+    def has_prefix(self, string: str) -> bool:
+        def _has_prefix(node: Node, rest: str) -> bool:
+            if not rest:
+                return True
+
+            if not node:
+                return None
+
+            if node.val != rest[0]:
+                return False
+
+            for kid in node.nodes:
+                if _has_prefix(kid, rest[1:]):
+                    return True
+
+            return len(rest) == 1
+
+        for kid in self.root.nodes:
+            if _has_prefix(kid, string):
+                return True
+
+        return False

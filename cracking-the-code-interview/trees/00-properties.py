@@ -5,7 +5,7 @@ from fixtures import (SIMPLE_TREE,
                       FULL_TREES, NOT_FULL_TREES,
                       PERFECT_TREES, IMPERFECT_TREES,
                       BALANCED_TREES, IMBALANCED_TREES)
-from tree import Node, Tree, BinaryTree, BinarySearchTree
+from tree import Node, Tree, BinaryTree, BinarySearchTree, Trie
 
 
 def test_basic_structures():
@@ -286,6 +286,54 @@ def test_is_not_balanced():
     for nodes in IMBALANCED_TREES:
         bt = BinaryTree(BinaryTree.build(nodes))
         assert not bt.is_balanced, "Tree {} is balanced".format(bt)
+
+
+def test_tries_index():
+    for use_case, expected_result in [
+        [('1234', '1245', '1678'), """
+-- *
+|  |-- 1
+|  |  |-- 2
+|  |  |  |-- 3
+|  |  |  |  |-- 4
+|  |  |  |-- 4
+|  |  |  |  |-- 5
+|  |  |-- 6
+|  |  |  |-- 7
+|  |  |  |  |-- 8"""],
+        [('qwe', 'q', 'qwe'), """
+-- *
+|  |-- q
+|  |  |-- w
+|  |  |  |-- e"""],
+    ]:
+        tree = Trie()
+
+        for string in use_case:
+            tree.index(string)
+
+        assert str(tree) == expected_result, "{} != {}".format(str(tree), expected_result)
+
+
+def test_tries_find_prefix():
+    for use_case, expected_result in [
+        [[('1234', '1245', '1678'), ('12', '1234', '00', '1', '167', '16710')],
+         [True, True, False, True, True, False]],
+        [[('qaz', 'wsx'), ('123', 'wqaz', '', 'qazwsx', 'qazw')],
+         [False, False, True, False, False]]
+    ]:
+
+        tree = Trie()
+        indexable_data, tests = use_case
+
+        for string in indexable_data:
+            tree.index(string)
+
+        result = [
+            tree.has_prefix(prefix)
+            for prefix in tests
+        ]
+        assert result == expected_result, "{} != {}".format(result, expected_result)
 
 
 def run_test(local, test: str):
