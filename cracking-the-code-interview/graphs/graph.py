@@ -13,18 +13,22 @@
 2 | 1 0 0 1
 3 | 1 0 1 0
 """
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, Callable
 
 
 class Graph:
+    class Kind:
+        LIST = 'list'
+        MATRIX = 'matrix'
+
     def __init__(self, store: dict = None):
         self.store = store or {}
 
     @staticmethod
     def build(kind: str, store: List[Tuple[int, int, int]]) -> Union['GraphList', 'GraphMatrix']:
-        if kind == 'list':
+        if kind == Graph.Kind.LIST:
             return GraphList.build(store)
-        elif kind == 'matrix':
+        elif kind == Graph.Kind.MATRIX:
             return GraphMatrix.build(store)
         else:
             raise ValueError("Invalid stored value.")
@@ -35,7 +39,7 @@ class Graph:
     def find_route(self, top: int, bottom: int) -> str:
         raise NotImplementedError()
 
-    def bfs(self, start: int) -> str:
+    def bfs(self, start: int, visit: Callable):
         raise NotImplementedError()
 
     def dfs(self, start: int) -> str:
@@ -62,6 +66,49 @@ class GraphList(Graph):
 
     def has_connection(self, _from: int, _to: int) -> bool:
         return _from in self.store and _to in self.store[_from]
+
+    def bfs(self, start: int, visit: Callable):
+        """
+            0: [1]
+            1: [0, 2]
+            2: [1, 3]
+            3: [2]
+
+            0, 1, 2, 3
+        """
+
+        if start not in self.store:
+            return
+
+        visited = [start]
+        queue = [
+            {
+                'from': start,
+                'to': node,
+                'value': val
+            } for node, val in self.store[start].items()
+        ]
+
+        while queue:
+            _next = queue.pop()
+
+            if _next['to'] in visited:
+                continue
+
+            visit(_next)
+            visited.append(_next['to'])
+
+            for node, value in self.store[_next['to']].items():
+                if node in visited:
+                    continue
+
+                queue.append({
+                    'from': _next['to'],
+                    'to': node,
+                    'value': value,
+                })
+
+        return
 
     def __str__(self) -> str:
         output = []
@@ -107,6 +154,47 @@ class GraphMatrix(Graph):
 
         return self.store[_to][_from] is not None
 
+    def bfs(self, start: int, visit: Callable):
+        if start >= len(self.store):
+            return
+
+        start -= 1
+
+        visited = [start]
+        queue = [
+            {
+                'from': start,
+                'to': node,
+                'value': val
+            } for node, val in enumerate(self.store[start])
+        ]
+
+        while queue:
+            _next = queue.pop()
+
+            if _next['to'] in visited:
+                continue
+
+            visit({
+                'from': _next['from'] + 1,
+                'to': _next['to'] + 1,
+                'value': _next['value']
+            })
+
+            visited.append(_next['to'])
+
+            for node, value in enumerate(self.store[_next['to']]):
+                if node in visited:
+                    continue
+
+                queue.append({
+                    'from': _next['to'],
+                    'to': node,
+                    'value': value,
+                })
+
+        return
+
     def __str__(self) -> str:
         output = []
 
@@ -126,6 +214,7 @@ class GraphMatrix(Graph):
 SIMPLE_GRAPH = [(1, 2, 3), (1, 3, 2), (1, 3, 2), (1, 2, 3)]
 
 
+# test build
 for use_case, expected_result in [
         [
             SIMPLE_GRAPH,
@@ -135,20 +224,21 @@ for use_case, expected_result in [
         ]
 ]:
 
-    list_graph = Graph.build('list', use_case)
+    list_graph = Graph.build(Graph.Kind.LIST, use_case)
     assert str(list_graph) == expected_result, "{} != {}".format(list_graph, expected_result)
 
-    matrix_graph = Graph.build('matrix', use_case)
+    matrix_graph = Graph.build(Graph.Kind.MATRIX, use_case)
     assert str(matrix_graph) == expected_result, "{} != {}".format(matrix_graph, expected_result)
 
 
+# test connection
 for use_case, expected_result in [
         [[1, 2], True],
         [[1, 3], True],
         [[2, 3], False],
         [[-1, -3], False],
 ]:
-    graph = Graph.build('list', SIMPLE_GRAPH)
+    graph = Graph.build(Graph.Kind.LIST, SIMPLE_GRAPH)
     result = graph.has_connection(*use_case)
 
     assert result == expected_result, "{} != {}".format(result, expected_result)
@@ -157,3 +247,16 @@ for use_case, expected_result in [
     result = graph.has_connection(*use_case)
 
     assert result == expected_result, "{} != {}".format(result, expected_result)
+
+
+# test bfs
+for graph_type in [Graph.Kind.LIST, Graph.Kind.MATRIX]:
+
+    output = []
+    def visit(node: dict):
+        output.append("{} -> {} [{}]".format(node['from'], node['to'], node['value']))
+
+    graph = Graph.build(graph_type, SIMPLE_GRAPH)
+    graph.bfs(SIMPLE_GRAPH[0][0], visit)
+
+    assert " ; ".join(output) == "1 -> 3 [2] ; 1 -> 2 [3]"
