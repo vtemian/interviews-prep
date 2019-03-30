@@ -36,8 +36,16 @@ class Graph:
     def has_connection(self, top: int, bottom: int) -> bool:
         raise NotImplementedError()
 
-    def find_route(self, top: int, bottom: int) -> str:
-        raise NotImplementedError()
+    def find_route(self, start: int, end: int) -> str:
+        found = False
+
+        def visit(node: dict) -> None:
+            nonlocal found
+            if node['to'] == end:
+                found = True
+
+        self.bfs(start, visit)
+        return found
 
     def bfs(self, start: int, visit: Callable):
         raise NotImplementedError()
@@ -258,6 +266,7 @@ class GraphMatrix(Graph):
 
 SIMPLE_GRAPH = [(1, 2, 3), (1, 3, 2), (1, 3, 2), (1, 2, 3)]
 HAIRY_GRAPH = [(1, 2, 3), (1, 3, 2), (2, 3, 5), (3, 5, 1), (5, 1, 6)]
+ROUTE_GRAPH = [(1, 2, 3), (1, 3, 2), (2, 3, 5), (3, 5, 1), (6, 7, 1)]
 
 
 # test build
@@ -295,7 +304,7 @@ for use_case, expected_result in [
     assert result == expected_result, "{} != {}".format(result, expected_result)
 
 
-# test bfs
+# test bfs and dfs
 for graph_type in [Graph.Kind.LIST, Graph.Kind.MATRIX]:
     graph = Graph.build(graph_type, HAIRY_GRAPH)
 
@@ -315,3 +324,18 @@ for graph_type in [Graph.Kind.LIST, Graph.Kind.MATRIX]:
 
     expected_result = "1 -> 2 [3] ; 2 -> 3 [5] ; 3 -> 1 [2] ; 1 -> 5 [6] ; 5 -> 3 [1]"
     assert result == expected_result, "{} != {}".format(result, expected_result)
+
+
+# test find route
+for graph_type in [Graph.Kind.LIST, Graph.Kind.MATRIX]:
+    for use_case, expected_result in [
+            [(1, 5), True],
+            [(2, 3), True],
+            [(1, 7), False],
+            [(1, 6), False],
+            [(6, 7), True],
+    ]:
+        graph = Graph.build(graph_type, ROUTE_GRAPH)
+
+        result = graph.find_route(*use_case)
+        assert result == expected_result, "{} != {}".format(result, expected_result)
