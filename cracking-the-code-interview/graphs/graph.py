@@ -42,7 +42,7 @@ class Graph:
     def bfs(self, start: int, visit: Callable):
         raise NotImplementedError()
 
-    def dfs(self, start: int) -> str:
+    def dfs(self, start: int, visit: Callable):
         raise NotImplementedError()
 
 
@@ -80,7 +80,7 @@ class GraphList(Graph):
         if start not in self.store:
             return
 
-        visited = [start]
+        visited = []
         queue = [
             {
                 'from': start,
@@ -90,18 +90,15 @@ class GraphList(Graph):
         ]
 
         while queue:
-            _next = queue.pop()
+            _next = queue.pop(0)
 
-            if _next['to'] in visited:
+            if (_next['to'], _next['from']) in visited or (_next['from'], _next['to']) in visited:
                 continue
 
             visit(_next)
-            visited.append(_next['to'])
+            visited.append((_next['to'], _next['from']))
 
             for node, value in self.store[_next['to']].items():
-                if node in visited:
-                    continue
-
                 queue.append({
                     'from': _next['to'],
                     'to': node,
@@ -109,6 +106,29 @@ class GraphList(Graph):
                 })
 
         return
+
+    def dfs(self, start: int, visit: Callable):
+        visited = []
+
+        def _dfs(node: int, _from: int = None):
+            if node not in self.store or ((node, _from) in visited or (_from, node) in visited):
+                return
+
+            visited.append((node, _from))
+
+            for _next, value in self.store[node].items():
+                if (_next, node) in visited or (node, _next) in visited:
+                    continue
+
+                visit({
+                    'from': node,
+                    'to': _next,
+                    'value': value
+                })
+
+                _dfs(_next, node)
+
+        _dfs(start)
 
     def __str__(self) -> str:
         output = []
@@ -128,9 +148,10 @@ class GraphMatrix(Graph):
             max_node = max(_from, _to, max_node)
 
         graph = []
-        while max_node:
+        count = 0
+        while count < max_node:
             graph.append([None] * max_node)
-            max_node -= 1
+            count += 1
 
         for node in store:
             _from, _to, val = node
@@ -160,19 +181,20 @@ class GraphMatrix(Graph):
 
         start -= 1
 
-        visited = [start]
+        visited = []
         queue = [
             {
                 'from': start,
                 'to': node,
                 'value': val
             } for node, val in enumerate(self.store[start])
+            if val is not None
         ]
 
         while queue:
-            _next = queue.pop()
+            _next = queue.pop(0)
 
-            if _next['to'] in visited:
+            if (_next['to'], _next['from']) in visited or (_next['from'], _next['to']) in visited:
                 continue
 
             visit({
@@ -181,10 +203,10 @@ class GraphMatrix(Graph):
                 'value': _next['value']
             })
 
-            visited.append(_next['to'])
+            visited.append((_next['to'], _next['from']))
 
             for node, value in enumerate(self.store[_next['to']]):
-                if node in visited:
+                if value is None:
                     continue
 
                 queue.append({
@@ -194,6 +216,29 @@ class GraphMatrix(Graph):
                 })
 
         return
+
+    def dfs(self, start: int, visit: Callable):
+        visited = []
+
+        def _dfs(node: int, _from: int = None):
+            if node >= len(self.store) or ((node, _from) in visited or (_from, node) in visited):
+                return
+
+            visited.append((node, _from))
+
+            for _next, value in enumerate(self.store[node]):
+                if value is None or (_next, node) in visited or (node, _next) in visited:
+                    continue
+
+                visit({
+                    'from': node + 1,
+                    'to': _next + 1,
+                    'value': value
+                })
+
+                _dfs(_next, node)
+
+        _dfs(start - 1)
 
     def __str__(self) -> str:
         output = []
@@ -212,6 +257,7 @@ class GraphMatrix(Graph):
 
 
 SIMPLE_GRAPH = [(1, 2, 3), (1, 3, 2), (1, 3, 2), (1, 2, 3)]
+HAIRY_GRAPH = [(1, 2, 3), (1, 3, 2), (2, 3, 5), (3, 5, 1), (5, 1, 6)]
 
 
 # test build
@@ -251,12 +297,21 @@ for use_case, expected_result in [
 
 # test bfs
 for graph_type in [Graph.Kind.LIST, Graph.Kind.MATRIX]:
+    graph = Graph.build(graph_type, HAIRY_GRAPH)
 
-    output = []
     def visit(node: dict):
         output.append("{} -> {} [{}]".format(node['from'], node['to'], node['value']))
 
-    graph = Graph.build(graph_type, SIMPLE_GRAPH)
-    graph.bfs(SIMPLE_GRAPH[0][0], visit)
+    output = []
+    graph.bfs(HAIRY_GRAPH[0][0], visit)
+    result = " ; ".join(output)
 
-    assert " ; ".join(output) == "1 -> 3 [2] ; 1 -> 2 [3]"
+    expected_result = "1 -> 2 [3] ; 1 -> 3 [2] ; 1 -> 5 [6] ; 2 -> 3 [5] ; 3 -> 5 [1]"
+    assert result == expected_result, "{} != {}".format(result, expected_result)
+
+    output = []
+    graph.dfs(HAIRY_GRAPH[0][0], visit)
+    result = " ; ".join(output)
+
+    expected_result = "1 -> 2 [3] ; 2 -> 3 [5] ; 3 -> 1 [2] ; 1 -> 5 [6] ; 5 -> 3 [1]"
+    assert result == expected_result, "{} != {}".format(result, expected_result)
