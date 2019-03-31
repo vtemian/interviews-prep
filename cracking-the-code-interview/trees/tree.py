@@ -3,14 +3,18 @@ from typing import List, Callable, Union, Tuple
 
 
 class Node:
-    def __init__(self, val: Union[str, int], nodes: List['Node'] = None):
+    def __init__(self, val: Union[str, int], parent: 'Node' = None, nodes: List['Node'] = None):
         self.val = val
+        self.parent = parent
         self.nodes = nodes or []
 
     def __str__(self) -> str:
         return str(self.val)
 
     def __eq__(self, other: 'Node') -> bool:
+        if not other:
+            return False
+
         return self.val == other.val
 
     def __lt__(self, other: 'Node') -> bool:
@@ -72,8 +76,25 @@ class Tree:
 
         return _find(self.root)
 
+    def find_node(self, val: int) -> bool:
+        def _find(node: Node):
+            if node is None:
+                return None
+
+            if node.val == val:
+                return node
+
+            for kid in node.nodes:
+                result = _find(kid)
+                if result:
+                    return result
+
+            return None
+
+        return _find(self.root)
+
     @staticmethod
-    def build(nodes: List):
+    def build(nodes: List, parent: Node = None):
         """
             (1,
                 [(2,
@@ -90,17 +111,21 @@ class Tree:
             return None
 
         if isinstance(nodes, int):
-            return Node(nodes)
+            return Node(nodes, parent)
 
         if len(nodes) < 2:
-            return Node(nodes[0])
+            return Node(nodes[0], parent)
 
         root, kids = nodes
+        root = Node(root, parent)
+
         kids = [
-            Tree.build(kid)
+            Tree.build(kid, root)
             for kid in kids
         ]
-        return Node(root, kids)
+
+        root.nodes = kids
+        return root
 
     def insert(self, val: int) -> bool:
         self.root.nodes.append(Node(val))
