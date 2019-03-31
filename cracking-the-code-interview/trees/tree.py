@@ -1,3 +1,4 @@
+import sys
 from typing import List, Callable, Union, Tuple
 
 
@@ -180,24 +181,32 @@ class BinaryTree(Tree):
     def is_balanced(self) -> bool:
         """ Each subtrees have a difference of maxmimum one in height. """
 
-        def _is_balanced(node: Node) -> bool:
+        def _check_height(node: Node) -> int:
             if not node:
-                return False
+                return -1
 
             if not node.nodes:
-                return True
+                return 0
 
             if len(node.nodes) < 2:
-                return Tree.node_depth(node.nodes[0]) == 1
+                right = -1
+            else:
+                right = _check_height(node.nodes[1])
 
-            depth = abs(Tree.node_depth(node.nodes[0]) -
-                        Tree.node_depth(node.nodes[1]))
-            if depth > 1:
-                return False
+            left = _check_height(node.nodes[0])
 
-            return _is_balanced(node.nodes[0]) and _is_balanced(node.nodes[1])
+            if left == sys.maxsize:
+                return left
 
-        return _is_balanced(self.root)
+            if right == sys.maxsize:
+                return right
+
+            if abs(left - right) > 1:
+                return sys.maxsize
+
+            return max(left, right) + 1
+
+        return _check_height(self.root) != sys.maxsize
 
     @property
     def is_binary_tree(self) -> bool:
